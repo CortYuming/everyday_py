@@ -52,11 +52,3 @@ def create_csvfile(data):
 if __name__ == '__main__':
     data = create_data()
     create_csvfile(data)
-
-"""
-In [16]: %timeit os.system("python example4_4.py")
-1 loops, best of 3: 37.7 s per loop
-
-In [2]: %timeit os.system("ruby example4-4.rb")
-1 loops, best of 3: 34.9 s per loop
-"""
