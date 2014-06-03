@@ -5,48 +5,62 @@ from random import randrange
 DURATION = 9 * 60
 
 
-class Restroom:
-    def __init__(self, quantity_of_toilet=3):
-        # 待ち行列
+class Restroom(object):
+    def __init__(self, facilities_per_restroom=3):
         self.queue = []
-        # 占有者
-        self.occupant = []
-        # 便器の数
-        self.quantity_of_toilet = quantity_of_toilet
-
-    def line_up(self, person):
-        self.queue.append(person)
+        self.facilities = [Facility() for _ in range(facilities_per_restroom)]
 
     def enter(self, person):
-        self.occupant.append(person)
+        for facility in self.facilities:
+            if not facility.occupier:
+                facility.occupy(person)
+                return
 
-    def is_empty(self):
-        return len(self.occupant) < self.quantity_of_toilet
+        self.queue.append(person)
+        if person in Person.population:
+            Person.population.remove(person)
 
-    # 用を足したら立ち去る
+    def tick(self):
+        for facility in self.facilities:
+            facility.tick()
+
+
+class Facility(object):
+    def __init__(self):
+        self.occupier = None
+        self.duration = 0
+
+    def occupy(self, person):
+        if self.occupier:
+            return False
+
+        self.occupier = person
+        self.duration = 1
+        if person in Person.population:
+            Person.population.remove(person)
+        return True
+
     def vacate(self):
-        for person in self.occupant:
-            if person.use_duration < person.tick:
-                self.occupant.remove(person)
-                person.tick = 0
-                Person.population.append(person)
+        Person.population.append(self.occupier)
+        self.occupier = None
 
-    def put_a_tick_foward(self):
-        for person in self.occupant:
-            person.tick += 1
+    def tick(self):
+        if self.occupier and self.duration > self.occupier.use_duration:
+            self.vacate()
+            self.duration = 0
+        elif self.occupier:
+            self.duration += 1
 
 
-class Person:
+class Person(object):
     population = []
 
-    def __init__(self, frequency=3, use_duration=1):
-        # 実行中に設備を何回使うか
+    def __init__(self, frequency=4, use_duration=4):
         self.frequency = frequency
-        # 設備利用時間
         self.use_duration = use_duration
-        # 利用時間
-        self.tick = 0
-        self.population.append(self)
 
     def is_need_to_go(self):
         return randrange(DURATION) + 1 <= self.frequency
+
+    def enters(self, location):
+        location.enter(self)
